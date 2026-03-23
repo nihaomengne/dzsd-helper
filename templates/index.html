@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>收单录入辅助小程序</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/4.6.0/css/bootstrap.min.css">
+    <style>
+        body {
+            background-color: #e8ecf2;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+        .nav-container {
+            background-color: #1a3f77;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .nav-links {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        .nav-links a:hover {
+            color: #f8f9fa;
+            text-decoration: underline;
+        }
+        .user-info {
+            font-size: 0.9rem;
+        }
+        .container {
+            max-width: 500px;
+            width: 100%;
+            background-color: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1), 0 1px 8px rgba(0,0,0,0.2);
+            padding: 2rem;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #1a3f77;
+            text-align: center;
+            margin-bottom: 2rem;
+            font-size: 1.8rem;
+            font-weight: bold;
+        }
+        #counter {
+            text-align: center;
+            font-weight: bold;
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+        }
+        .form-group {
+            margin-bottom: 1.2rem;
+        }
+        .form-control {
+            border-radius: 10px;
+            border: 1px solid #ced4da;
+            transition: all 0.3s ease;
+        }
+        .form-control:focus {
+            box-shadow: 0 0 0 3px rgba(26,63,119,0.25);
+            border-color: #1a3f77;
+        }
+        .btn-primary {
+            background-color: #1a3f77;
+            border-color: #1a3f77;
+            border-radius: 10px;
+            padding: 10px 20px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            background-color: #152f59;
+            border-color: #152f59;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .btn-info {
+            border-radius: 10px;
+            padding: 10px 20px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            margin-top: 5px;
+        }
+        .btn-info:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        #imageCount {
+            margin-top: 0.5rem;
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+        label {
+            font-weight: 600;
+            color: #495057;
+        }
+        .form-control-file {
+            border: 1px solid #ced4da;
+            border-radius: 10px;
+            padding: 10px;
+            width: 100%;
+        }
+        @media (max-width: 576px) {
+            .container {
+                padding: 1.5rem;
+            }
+            h1 {
+                font-size: 1.5rem;
+            }
+        }
+        @media (max-width: 767px) {
+            .btn-group-vertical {
+                display: flex;
+                flex-direction: column;
+                width: 100%;
+            }
+            .btn-group-vertical .btn {
+                margin-bottom: 10px;
+                width: 100%;
+            }
+        }
+        .btn-group-custom {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+        }
+        .btn-group-custom .btn {
+            flex: 0 0 48%;  /* 按钮宽度略小于50%，留出间距 */
+            margin-bottom: 10px;
+        }
+        @media (max-width: 767px) {
+            .btn-group-custom {
+                flex-direction: column;
+            }
+            .btn-group-custom .btn {
+                flex: 0 0 100%;
+                margin-bottom: 15px;  /* 增加垂直间距 */
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 导航栏放在页面顶部 -->
+    <div class="nav-container">
+        <div class="nav-links">
+            <div class="user-info">
+                欢迎, {{ username }} 
+                <span class="usage-count">(剩余次数: {{ max_count - user_count }}/{{ max_count }})</span>
+                | <a href="{{ url_for('change_password') }}">修改密码</a> 
+                
+            </div>
+            <div>
+                {% if session.get('is_admin') %}
+                <a href="{{ url_for('admin_panel') }}">管理面板</a> | 
+                {% endif %}
+                <a href="{{ url_for('logout') }}">退出登录</a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 闪现消息显示 -->
+    {% if get_flashed_messages() %}
+    <div class="flash-messages">
+        {% for category, message in get_flashed_messages(with_categories=true) %}
+        <div class="flash-message {{ category }}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="container">
+        <h1>收单录入辅助小程序</h1>
+        <div id="counter" style="font-family: 'Georgia', 'Times New Roman', serif; font-size: 0.85em;">
+            <em>该应用已累计使用 {{ count }} 次 🎉</em>
+        </div>
+
+        <form method="POST" enctype="multipart/form-data" id="mainForm">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="branch">申请支行：</label>
+                        <select class="form-control" id="branch" name="branch" required>
+                            <option value="定州支行">定州支行</option>
+                            <option value="定州开发区支行">定州开发区支行</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="application_date">申请日期：</label>
+                        <input type="date" class="form-control" id="application_date" name="application_date" required value="{{ today }}">
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="merchant_name">商户名称：</label>
+                <input type="text" class="form-control" id="merchant_name" name="merchant_name" required>
+                <!-- 修改企查查搜索按钮，使用JavaScript打开新窗口 -->
+                <button type="button" id="search_qcc_btn" class="btn btn-info btn-block mt-2">在企查查中搜索商户信息</button>
+            </div>
+
+            <div class="form-group">
+                <label for="merchant_address">商户地址：</label>
+                <input type="text" class="form-control" id="merchant_address" name="merchant_address" required>
+            </div>
+
+            <div class="form-group">
+                <label for="merchant_code">商户编号：</label>
+                <input type="text" class="form-control" id="merchant_code" name="merchant_code" required>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="contact_person">联系人：</label>
+                        <input type="text" class="form-control" id="contact_person" name="contact_person" required>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="contact_phone">联系电话：</label>
+                        <input type="tel" class="form-control" id="contact_phone" name="contact_phone" required>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="bank_card_number">BandCard（选填）：</label>
+                <input type="text" class="form-control" id="bank_card_number" name="bank_card_number">
+            </div>
+
+            <div class="form-group">
+                <label for="operator">录入员：</label>
+                <div class="input-group">
+                    <input type="text" class="form-control" id="operator" name="operator" list="operatorList" required>
+                    <datalist id="operatorList">
+                        <option value="芦洪涛">
+                    </datalist>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="images">上传图片（可选）：</label>
+                <input type="file" class="form-control-file" id="images" name="images" multiple accept="image/*">
+                <div id="imageCount"></div>
+            </div>
+
+            <div class="form-check">
+                <input type="checkbox" class="form-check-input" id="generate_explanation" name="generate_explanation">
+                <label class="form-check-label" for="generate_explanation">生成情况说明</label>
+            </div>
+            
+            <div class="btn-group-custom">
+                <button type="submit" class="btn btn-primary">生成Word文档</button>
+                <input type="submit" class="btn btn-primary" name="generate_excel" value="生成Excel文件">
+            </div>
+        </form>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/4.6.0/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.getElementById('images').addEventListener('change', function(event) {
+            var fileCount = event.target.files.length;
+            document.getElementById('imageCount').textContent = fileCount > 0 ? '已选择 ' + fileCount + ' 张图片' : '';
+        });
+        
+        // 设置默认日期
+        document.getElementById('application_date').value = new Date().toISOString().split('T')[0];
+        
+        // 添加企查查搜索按钮事件处理
+        document.getElementById('search_qcc_btn').addEventListener('click', function() {
+            var merchantName = document.getElementById('merchant_name').value.trim();
+            if(merchantName) {
+                // 更新企查查搜索URL
+                window.open('https://www.qichacha.com/search?key=' + encodeURIComponent(merchantName), '_blank');
+            } else {
+                alert('请先输入商户名称');
+            }
+        });
+        
+        // 解析 URL 参数并填充表单
+        function getUrlParams() {
+            let params = {};
+            let queryString = window.location.search.substring(1);
+            let pairs = queryString.split('&');
+            
+            for(let i = 0; i < pairs.length; i++) {
+                if(!pairs[i]) continue;
+                let pair = pairs[i].split('=');
+                params[decodeURIComponent(pair[0])] = decodeURIComponent(pair[1] || '');
+            }
+            return params;
+        }
+        
+        // 填充表单数据
+        function fillFormFromUrl() {
+            let params = getUrlParams();
+            
+            // 遍历所有参数并填充对应表单字段
+            for(let key in params) {
+                let element = document.getElementById(key);
+                if(element) {
+                    if(element.type === 'checkbox') {
+                        element.checked = params[key] === 'true';
+                    } else {
+                        element.value = params[key];
+                    }
+                }
+            }
+        }
+        
+        // 页面加载完成后执行
+        window.addEventListener('load', function() {
+            fillFormFromUrl();
+            
+            // 检查是否已达到限制
+            var reachedLimit = {{ reached_limit|tojson }};
+            
+            // 如果已达到限制，为表单添加提交事件处理
+            if (reachedLimit) {
+                document.getElementById('mainForm').addEventListener('submit', function(event) {
+                    event.preventDefault();
+                    // 显示弹出框
+                    alert('您已达到文档生成次数上限，请联系管理员增加次数');
+                    return false;
+                });
+            }
+            
+            // 根据剩余次数设置样式
+            const usageCount = document.querySelector('.usage-count');
+            const remaining = {{ max_count - user_count }};
+            const maxCount = {{ max_count }};
+            
+            if (remaining / maxCount < 0.3) {
+                usageCount.classList.add('low');
+            } else if (remaining / maxCount < 0.6) {
+                usageCount.classList.add('medium');
+            } else {
+                usageCount.classList.add('high');
+            }
+        });
+    </script>
+</body>
+</html>

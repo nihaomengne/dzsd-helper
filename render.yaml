@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: dzsd-helper
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn --bind 0.0.0.0:$PORT app:app
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: INIT_ADMIN_USERNAME
+        value: admin
+      - key: INIT_ADMIN_PASSWORD
+        sync: false
+      - key: ALLOW_PUBLIC_REGISTRATION
+        value: false
+      - key: SESSION_COOKIE_SECURE
+        value: true
+      - key: TRUST_PROXY
+        value: true
+      - key: DATA_DIR
+        value: /opt/render/project/data
+      - key: DEFAULT_MAX_COUNT
+        value: 10
+    disk:
+      name: dzsd-data
+      mountPath: /opt/render/project/data
+      sizeGB: 1
