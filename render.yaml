@@ -19,10 +19,6 @@ services:
       - key: TRUST_PROXY
         value: true
       - key: DATA_DIR
-        value: /opt/render/project/data
+        value: /tmp/dzsd-data
       - key: DEFAULT_MAX_COUNT
         value: 10
-    disk:
-      name: dzsd-data
-      mountPath: /opt/render/project/data
-      sizeGB: 1
